@@ -238,7 +238,8 @@ class ReservationList extends Component {
     }
     const scrollPosition = reservations.length;
     const iterator = new XDate(props.currentMonth);
-    const days = iterator.clone().addMonths(1).setDate(0).getDate();
+    // clone-> set day somewhere in the middle to avoid last day bug -> add one month -> get date 0 because a zeor based date lib will return last day of prev month this way
+    const days = iterator.clone().setDate(15).addMonths(1).setDate(0).getDate();
     iterator.setDate(1);
     for (let i = 0; i < days; i++) {
       const res = this.getReservationsForDay(iterator, props);
@@ -321,13 +322,10 @@ class ReservationList extends Component {
         }}
         onLayout={({
           nativeEvent: {
-            layout: {x, y, width, height},
+            layout: {height},
           },
         }) => {
-          console.log(`------------------------`);
-          console.log({x, y, width, height});
           this.listHeight = height;
-          console.log(`------------------------`);
         }}
       />
     );
