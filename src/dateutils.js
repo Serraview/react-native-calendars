@@ -70,7 +70,7 @@ function page(xd, firstDayOfWeek = 1) {
 
   const from = days[0].clone();
   if (from.getDay() !== fdow) {
-    from.addDays(-(from.getDay() + 6 - fdow) % 7);
+    from.addDays(-(from.getDay() + 7 - fdow) % 7);
   }
 
   const to = days[days.length - 1].clone();
