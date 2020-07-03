@@ -1,16 +1,15 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import {Text, View} from 'react-native';
 import Calendar from '../calendar';
 import styleConstructor from './style';
 
-
-class CalendarListItem extends Component {
+class CalendarListItem extends PureComponent {
   static displayName = 'CalendarListItem';
-  
+
   static defaultProps = {
     hideArrows: true,
     hideExtraDays: true,
-    renderHeader: undefined
+    renderHeader: undefined,
   };
 
   constructor(props) {
@@ -19,13 +18,13 @@ class CalendarListItem extends Component {
     this.style = styleConstructor(props.theme);
   }
 
-  shouldComponentUpdate(nextProps) {
+  /* shouldComponentUpdate(nextProps) {
     // console.log('CalendarList/Item/shouldComponentUpdate',this.props.item,nextProps.item);
     if(nextProps.hideCalendar !== this.props.hideCalendar)return true;
     const r1 = this.props.item;
     const r2 = nextProps.item;
     return r1.toString('yyyy MM') !== r2.toString('yyyy MM') || !!(r2.propbump && r2.propbump !== r1.propbump);
-  }
+  } */
 
   onPressArrowLeft = (_, month) => {
     const monthClone = month.clone();
@@ -43,7 +42,7 @@ class CalendarListItem extends Component {
 
       this.props.scrollToMonth(monthClone);
     }
-  }
+  };
 
   onPressArrowRight = (_, month) => {
     const monthClone = month.clone();
@@ -54,8 +53,7 @@ class CalendarListItem extends Component {
       monthClone.addMonths(1);
       this.props.scrollToMonth(monthClone);
     }
-  }
-
+  };
 
   render() {
     const row = this.props.item;
@@ -65,7 +63,14 @@ class CalendarListItem extends Component {
         <Calendar
           testID={`${this.props.testID}_${itemIndex}`}
           theme={this.props.theme}
-          style={[{height: this.props.calendarHeight, width: this.props.calendarWidth}, this.style.calendar, this.props.style]}
+          style={[
+            {
+              height: this.props.calendarHeight,
+              width: this.props.calendarWidth,
+            },
+            this.style.calendar,
+            this.props.style,
+          ]}
           current={row}
           hideCalendar={this.props.hideCalendar}
           toggleCalendar={this.props.toggleCalendar}
@@ -86,9 +91,19 @@ class CalendarListItem extends Component {
           disabledByDefault={this.props.disabledByDefault}
           showWeekNumbers={this.props.showWeekNumbers}
           renderArrow={this.props.renderArrow}
-          onPressArrowLeft={this.props.horizontal ? this.onPressArrowLeft : this.props.onPressArrowLeft}
-          onPressArrowRight={this.props.horizontal ? this.onPressArrowRight : this.props.onPressArrowRight}
-          headerStyle={this.props.horizontal ? this.props.headerStyle : undefined}
+          onPressArrowLeft={
+            this.props.horizontal
+              ? this.onPressArrowLeft
+              : this.props.onPressArrowLeft
+          }
+          onPressArrowRight={
+            this.props.horizontal
+              ? this.onPressArrowRight
+              : this.props.onPressArrowRight
+          }
+          headerStyle={
+            this.props.horizontal ? this.props.headerStyle : undefined
+          }
           accessibilityElementsHidden={this.props.accessibilityElementsHidden} // iOS
           importantForAccessibility={this.props.importantForAccessibility} // Android
           renderHeader={this.props.renderHeader}
@@ -99,8 +114,17 @@ class CalendarListItem extends Component {
       const text = row.toString();
 
       return (
-        <View style={[{height: this.props.calendarHeight, width: this.props.calendarWidth}, this.style.placeholder]}>
-          <Text allowFontScaling={false} style={this.style.placeholderText}>{text}</Text>
+        <View
+          style={[
+            {
+              height: this.props.calendarHeight,
+              width: this.props.calendarWidth,
+            },
+            this.style.placeholder,
+          ]}>
+          <Text allowFontScaling={false} style={this.style.placeholderText}>
+            {text}
+          </Text>
         </View>
       );
     }

@@ -61,7 +61,7 @@ class CalendarList extends Component {
     staticHeader: PropTypes.bool,
     /** A custom key extractor for the generated calendar months */
     keyExtractor: PropTypes.func,
-    renderHeader: PropTypes.func
+    renderHeader: PropTypes.func,
   };
 
   static defaultProps = {
@@ -75,7 +75,7 @@ class CalendarList extends Component {
     scrollsToTop: false,
     removeClippedSubviews: Platform.OS === 'android' ? false : true,
     keyExtractor: (item, index) => String(index),
-    renderHeader:undefined
+    renderHeader: undefined,
   };
 
   constructor(props) {
@@ -104,16 +104,15 @@ class CalendarList extends Component {
        * This selects range around current shown month [-0, +2] or [-1, +1] month for detail calendar rendering.
        * If `this.pastScrollRange` is `undefined` it's equal to `false` or 0 in next condition.
        */
-      if (
-        (this.props.pastScrollRange - 1 <= i &&
-          i <= this.props.pastScrollRange + 1) ||
-        (!this.props.pastScrollRange && i <= this.props.pastScrollRange + 2)
-      ) {
-        rows.push(rangeDate);
-      } else {
-        rows.push(rangeDateStr);
-      }
-      
+      // if (
+      //   (this.props.pastScrollRange - 1 <= i &&
+      //     i <= this.props.pastScrollRange + 1) ||
+      //   (!this.props.pastScrollRange && i <= this.props.pastScrollRange + 2)
+      // ) {
+      rows.push(rangeDate);
+      // } else {
+      //   rows.push(rangeDateStr);
+      // }
     }
 
     this.state = {
@@ -121,7 +120,7 @@ class CalendarList extends Component {
       texts,
       openDate: date,
       currentMonth: parseDate(props.current),
-      hideCalendar:false
+      hideCalendar: false,
     };
 
     this.onViewableItemsChangedBound = this.onViewableItemsChanged.bind(this);
@@ -130,9 +129,9 @@ class CalendarList extends Component {
     this.onLayout = this.onLayout.bind(this);
   }
 
-  toggleCalendar = () =>{
-    this.setState({hideCalendar:!this.state.hideCalendar});
-  }
+  toggleCalendar = () => {
+    this.setState({hideCalendar: !this.state.hideCalendar});
+  };
 
   onLayout(event) {
     if (this.props.onLayout) {
@@ -206,6 +205,8 @@ class CalendarList extends Component {
   }
 
   onViewableItemsChanged({viewableItems}) {
+    console.log(this);
+    console.log('@onViewableItemsChanged::viewableItems', viewableItems);
     function rowIsCloseToViewable(index, distance) {
       for (let i = 0; i < viewableItems.length; i++) {
         if (Math.abs(index - parseInt(viewableItems[i].index)) <= distance) {
@@ -221,15 +222,15 @@ class CalendarList extends Component {
 
     for (let i = 0; i < rowclone.length; i++) {
       let val = rowclone[i];
-      const rowShouldBeRendered = rowIsCloseToViewable(i, 1);
+      // const rowShouldBeRendered = rowIsCloseToViewable(i, 1);
 
-      if (rowShouldBeRendered && !rowclone[i].getTime) {
+      if (/* rowShouldBeRendered &&  */ !rowclone[i].getTime) {
         val = this.state.openDate
           .clone()
           .addMonths(i - this.props.pastScrollRange, true);
-      } else if (!rowShouldBeRendered) {
+      } /* else if (!rowShouldBeRendered) {
         val = this.state.texts[i];
-      }
+      } */
       newrows.push(val);
       if (rowIsCloseToViewable(i, 0)) {
         visibleMonths.push(xdateToData(val));
@@ -250,7 +251,7 @@ class CalendarList extends Component {
     const {item, index} = d;
     return (
       <CalendarListItem
-        testID={`${this.props.testID}_${index+1}`}
+        testID={`${this.props.testID}_${index + 1}`}
         scrollToMonth={this.scrollToMonth.bind(this)}
         item={item}
         itemIndex={index}
@@ -369,7 +370,7 @@ class CalendarList extends Component {
           } // ListView deprecated
           data={this.state.rows}
           extraData={this.state.hideCalendar}
-          // snapToAlignment='start'
+          snapToAlignment="start"
           //snapToInterval={this.calendarHeight}
           removeClippedSubviews={this.props.removeClippedSubviews}
           pageSize={1} // ListView deprecated
