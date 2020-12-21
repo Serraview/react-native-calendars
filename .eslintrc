@@ -1,0 +1,66 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "airbnb-typescript",
+    "prettier",
+    "prettier/react",
+    "prettier/@typescript-eslint"
+  ],
+  "plugins": [
+    "prettier",
+    "react",
+    "react-hooks",
+    "jsx-a11y",
+    "@typescript-eslint"
+  ],
+  "env": {
+    "jest": true,
+    "browser": true,
+    "node": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.eslint.json"
+  },
+  "rules": {
+    "@typescript-eslint/explicit-function-return-type": ["error"],
+    "import/no-extraneous-dependencies": [
+      "error",
+      { "devDependencies": ["**/*.test.js", "**/*.spec.js"] }
+    ],
+    "@typescript-eslint/semi": ["error"],
+    "import/prefer-default-export": 0,
+    // "@typescript-eslint/naming-convention"
+    // "react/jsx-one-expression-per-line": [2, { "allow": "single-child" }],
+    "react/destructuring-assignment": 0,
+    "react/jsx-props-no-spreading": 0,
+    "no-plusplus": 0,
+    "react/require-default-props": 0
+    // "react/jsx-closing-bracket-location": [
+    //   1,
+    //   { "selfClosing": "line-aligned", "nonEmpty": "tag-aligned" }
+    // ],
+    // "indent": [
+    //   2,
+    //   2,
+    //   {
+    //     "SwitchCase": 1
+    //   }
+    // ]
+  },
+  "ignorePatterns": ["node_modules/*", "scripts/*"],
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx", ".js", ".jsx"]
+    },
+    "import/ignore": ["types"],
+    "import/resolver": {
+      "alias": []
+    }
+  }
+}
