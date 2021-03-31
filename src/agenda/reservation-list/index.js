@@ -55,10 +55,10 @@ class ReservationList extends Component {
     this.style = styleConstructor(props.theme);
 
     this.state = {
-      reservations: []
+      reservations: [],
+      heights: []
     };
 
-    this.heights = [];
     this.scrollOver = true;
     this.noUpdate = false;
     this.isTouched = false;
@@ -72,10 +72,10 @@ class ReservationList extends Component {
   componentDidUpdate(prevProps) {
     if (prevProps !== this.props) {
       if (!dateutils.sameMonth(prevProps.selectedDay, this.props.selectedDay)) {
-        this.heights = [];
         this.setState(
             {
-              reservations: []
+              reservations: [],
+              heights : []
             },
             () => this.updateReservations(this.props)
         );
@@ -165,14 +165,14 @@ class ReservationList extends Component {
     if (this.isTouched || this.noUpdate) return;
     if (!this.list) return;
 
-    if( this.heights.length !== this.state.reservations.length) {
+    if( this.state.heights.length !== this.state.reservations.length) {
       this.needToScroll = true;
       return;
     }
     let scrollPosition = 0;
     const toDay = this.props.selectedDay.getDate();
     for (let i = 0; i < toDay - 1; i++) {
-      scrollPosition += this.heights[i] || 0;
+      scrollPosition += this.state.heights[i] || 0;
     }
     this.scrollOver = false;
     if (this.list){
@@ -188,20 +188,21 @@ class ReservationList extends Component {
 
     let topRowOffset = 0;
     let topRow;
-    for (topRow = 0; topRow < this.heights.length; topRow++) {
-      if (topRowOffset + this.heights[topRow] * 0.7 >= yOffset) {
+    const heights = this.state.heights;
+    for (topRow = 0; topRow < heights.length; topRow++) {
+      if (topRowOffset + heights[topRow] * 0.7 >= yOffset) {
         break;
       }
-      topRowOffset += this.heights[topRow];
+      topRowOffset += heights[topRow];
     }
 
     const row = this.state.reservations[topRow];
     if (!row) return;
 
     if (
-      topRowOffset + this.heights[topRow] * 0.1 <= yOffset &&
-        topRowOffset + this.heights[topRow] * 0.95 >= yOffset &&
-        this.listHeight < this.heights[topRow]
+      topRowOffset + heights[topRow] * 0.1 <= yOffset &&
+        topRowOffset + heights[topRow] * 0.95 >= yOffset &&
+        this.listHeight < heights[topRow]
     ) {
       this.noUpdate = true;
     } else {
@@ -221,7 +222,15 @@ class ReservationList extends Component {
   }
 
   onRowLayoutChange(ind, event) {
-    this.heights[ind] = event.nativeEvent.layout.height;
+    const newHeight = [...this.state.heights];
+    newHeight[ind] = event.nativeEvent.layout.height;
+
+    this.setState(
+        {
+          reservations: this.state.reservations,
+          heights : newHeight
+        }
+    );
   }
 
   onMoveShouldSetResponderCapture = () => {
@@ -234,7 +243,7 @@ class ReservationList extends Component {
   renderRow = ({item, index}) => {
     const reservationProps = extractComponentProps(Reservation, this.props);
 
-    if( this.heights.length === this.state.reservations.length && this.needToScroll) {
+    if( this.state.heights.length === this.state.reservations.length && this.needToScroll) {
       this.updateScrollPosition();
     }
 
