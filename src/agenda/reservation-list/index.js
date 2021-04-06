@@ -1,189 +1,107 @@
+import _ from 'lodash';
+import PropTypes from 'prop-types';
+import XDate from 'xdate';
 import React, {Component} from 'react';
 import {FlatList, ActivityIndicator, View} from 'react-native';
-import Reservation from './reservation';
-import PropTypes from 'prop-types';
-import XDate, {today} from 'xdate';
-import {parseDate} from '../../interface';
-
+import {extractComponentProps} from '../../component-updater';
 import dateutils from '../../dateutils';
 import styleConstructor from './style';
+import Reservation from './reservation';
 
 class ReservationList extends Component {
-  static displayName = 'ReservationList';
+  static displayName = 'IGNORE';
 
   static propTypes = {
-    // specify your item comparison function for increased performance
-    rowHasChanged: PropTypes.func,
-    // specify how each item should be rendered in agenda
-    renderItem: PropTypes.func,
-    // specify how each date should be rendered. day can be undefined if the item is not first in that day.
-    renderDay: PropTypes.func,
-    // specify how empty date content with no items should be rendered
-    renderEmptyDate: PropTypes.func,
-    // callback that gets called when day changes while scrolling agenda list
-    onDayChange: PropTypes.func,
-    // onScroll ListView event
-    onScroll: PropTypes.func,
-    // the list of items that have to be displayed in agenda. If you want to render item as empty date
-    // the value of date key kas to be an empty array []. If there exists no value for date key it is
-    // considered that the date in question is not yet loaded
+    ...Reservation.propTypes,
+    /** the list of items that have to be displayed in agenda. If you want to render item as empty date
+     the value of date key kas to be an empty array []. If there exists no value for date key it is
+     considered that the date in question is not yet loaded */
     reservations: PropTypes.object,
     selectedDay: PropTypes.instanceOf(XDate),
     topDay: PropTypes.instanceOf(XDate),
-    refreshControl: PropTypes.element,
-    refreshing: PropTypes.bool,
-    onRefresh: PropTypes.func,
+    /** Show items only for the selected day. Default = false */
+    showOnlySelectedDayItems: PropTypes.bool,
+    /** callback that gets called when day changes while scrolling agenda list */
+    onDayChange: PropTypes.func,
+    /** specify what should be rendered instead of ActivityIndicator */
+    renderEmptyData: PropTypes.func,
+
+    /** onScroll ListView event */
+    onScroll: PropTypes.func,
+    /** Called when the user begins dragging the agenda list **/
     onScrollBeginDrag: PropTypes.func,
+    /** Called when the user stops dragging the agenda list **/
     onScrollEndDrag: PropTypes.func,
+    /** Called when the momentum scroll starts for the agenda list **/
     onMomentumScrollBegin: PropTypes.func,
+    /** Called when the momentum scroll stops for the agenda list **/
     onMomentumScrollEnd: PropTypes.func,
+    /** A RefreshControl component, used to provide pull-to-refresh functionality for the ScrollView */
+    refreshControl: PropTypes.element,
+    /** Set this true while waiting for new data from a refresh */
+    refreshing: PropTypes.bool,
+    /** If provided, a standard RefreshControl will be added for "Pull to Refresh" functionality. Make sure to also set the refreshing prop correctly */
+    onRefresh: PropTypes.func
+  };
+
+  static defaultProps = {
+    refreshing: false,
+    selectedDay: XDate(true)
   };
 
   constructor(props) {
     super(props);
 
-    this.styles = styleConstructor(props.theme);
+    this.style = styleConstructor(props.theme);
 
     this.state = {
-      reservations: [],
+      reservations: []
     };
 
     this.heights = [];
-    this.selectedDay = this.props.selectedDay;
+    this.selectedDay = props.selectedDay;
     this.scrollOver = true;
-    this.isTouched = false;
-    this.forcedScrolling = false;
-    this.noUpdate = false;
-    // this.monthIsUpdated = true;
   }
 
-  UNSAFE_componentWillMount() {
+  componentDidMount() {
     this.updateDataSource(this.getReservations(this.props).reservations);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps !== this.props) {
+
+      if (!dateutils.sameDate(prevProps.topDay, this.props.topDay)) {
+        this.setState(
+          {
+            reservations: []
+          },
+          () => this.updateReservations(this.props)
+        );
+      } else {
+        this.updateReservations(this.props);
+      }
+    }
   }
 
   updateDataSource(reservations) {
     this.setState({
-      reservations,
+      reservations
     });
   }
 
   updateReservations(props) {
+    const {selectedDay} = props;
     const reservations = this.getReservations(props);
-
-    if (!dateutils.sameDate(props.selectedDay, this.selectedDay)) {
-      this.updateScrollPosition();
-    }
-    this.selectedDay = props.selectedDay;
-    this.updateDataSource(reservations.reservations);
-  }
-
-  UNSAFE_componentWillReceiveProps(props) {
-    const oldMonth = new XDate(this.props.currentMonth);
-    const newMonth = new XDate(props.currentMonth);
-    if (
-      !dateutils.sameDate(props.topDay, this.props.topDay) ||
-      oldMonth.getMonth() !== newMonth.getMonth()
-    ) {
-      if (oldMonth.getMonth() !== newMonth.getMonth())
-        this.forcedScrolling = true;
-      this.setState(
-        {
-          reservations: [],
-        },
-        () => {
-          this.updateReservations(props);
-          /* if(oldMonth.getMonth() !== newMonth.getMonth()){
-          this.monthIsUpdated = true;
-          // this.list.setNativeProps({ pointerEvents: 'auto' });
-        } */
-        },
-      );
-    } else {
-      this.updateReservations(props);
-    }
-  }
-
-  updateScrollPosition = () => {
-    if (this.isTouched || this.noUpdate) return;
-    if (!this.list && this.heights.length !== this.state.reservations.length) {
-      // setImidiate(this.updateScrollPosition);
-      return;
-    }
-    let scrollPosition = 0;
-    const toDay = this.selectedDay.getDate();
-    for (let i = 0; i < toDay - 1; i++) {
-      scrollPosition += this.heights[i] || 0;
-    }
-    this.scrollOver = false;
-    // this.forcedScrolling = true;
-    if (this.list)
-      this.list.scrollToOffset({offset: scrollPosition, animated: true});
-  };
-
-  onScroll(event) {
-    const {
-      nativeEvent: {
-        contentOffset: {y},
-        // contentSize:{height},
-        // layoutMeasurement:{height: lHeight}
-      },
-    } = event;
-    /* if(y > height-lHeight + 100){
-      this.changeMonth(1);
-      return;
-    } */
-    const yOffset = y;
-    let topRowOffset = 0;
-    let topRow;
-    for (topRow = 0; topRow < this.heights.length; topRow++) {
-      const withNext =
-        topRowOffset + this.heights[topRow] + this.heights[topRow + 1] || 0;
-      if (topRowOffset + this.heights[topRow] * 0.7 >= yOffset) {
-        break;
+    if (this.list && !dateutils.sameDate(selectedDay, this.selectedDay)) {
+      let scrollPosition = 0;
+      for (let i = 0; i < reservations.scrollPosition; i++) {
+        scrollPosition += this.heights[i] || 0;
       }
-      topRowOffset += this.heights[topRow];
+      this.scrollOver = false;
+      this.list.scrollToOffset({offset: scrollPosition, animated: true});
     }
-    const row = this.state.reservations[topRow];
-    if (!row) return;
-    if (
-      topRowOffset + this.heights[topRow] * 0.1 <= yOffset &&
-      topRowOffset + this.heights[topRow] * 0.95 >= yOffset &&
-      this.listHeight < this.heights[topRow]
-    ) {
-      this.noUpdate = true;
-    } else {
-      this.noUpdate = false;
-    }
-    const day = row.day;
-    const sameDate = dateutils.sameDate(day, this.selectedDay, y);
-
-    if (!sameDate && this.scrollOver && !this.forcedScrolling) {
-      this.selectedDay = day.clone();
-      this.forcedScrolling = false;
-      this.props.onDayChange(day.toDate());
-    }
-  }
-
-  onRowLayoutChange(ind, event) {
-    this.heights[ind] = event.nativeEvent.layout.height;
-    if (this.heights.length === this.state.reservations.length) {
-      this.updateScrollPosition();
-    }
-  }
-
-  renderRow({item, index}) {
-    return (
-      <View onLayout={this.onRowLayoutChange.bind(this, index)}>
-        <Reservation
-          item={item}
-          renderItem={this.props.renderItem}
-          renderDay={this.props.renderDay}
-          renderEmptyDate={this.props.renderEmptyDate}
-          theme={this.props.theme}
-          rowHasChanged={this.props.rowHasChanged}
-        />
-      </View>
-    );
+    this.selectedDay = selectedDay;
+    this.updateDataSource(reservations.reservations);
   }
 
   getReservationsForDay(iterator, props) {
@@ -198,7 +116,7 @@ class ReservationList extends Component {
         {
           reservation: [],
           date: day,
-          day,
+          day
         },
       );
       return out;
@@ -206,26 +124,25 @@ class ReservationList extends Component {
       return [
         {
           date: iterator.clone(),
-          day,
-        },
+          day
+        }
       ];
     } else {
       return false;
     }
   }
 
-  onListTouch() {
-    this.scrollOver = true;
-  }
-
   getReservations(props) {
-    if (!props.reservations || !props.selectedDay) {
+    const {selectedDay, showOnlySelectedDayItems} = props;
+    if (!props.reservations || !selectedDay) {
       return {reservations: [], scrollPosition: 0};
     }
+
     let reservations = [];
     if (this.state.reservations && this.state.reservations.length) {
       const iterator = this.state.reservations[0].day.clone();
-      while (iterator.getTime() < props.selectedDay.getTime()) {
+
+      while (iterator.getTime() < selectedDay.getTime()) {
         const res = this.getReservationsForDay(iterator, props);
         if (!res) {
           reservations = [];
@@ -236,97 +153,106 @@ class ReservationList extends Component {
         iterator.addDays(1);
       }
     }
+
     const scrollPosition = reservations.length;
-    const iterator = new XDate(props.currentMonth);
-    // clone-> set day somewhere in the middle to avoid last day bug -> add one month -> get date 0 because a zeor based date lib will return last day of prev month this way
-    const days = iterator.clone().setDate(15).addMonths(1).setDate(0).getDate();
-    iterator.setDate(1);
-    for (let i = 0; i < days; i++) {
+    const iterator = selectedDay.clone();
+    if (showOnlySelectedDayItems) {
       const res = this.getReservationsForDay(iterator, props);
+
       if (res) {
-        reservations = reservations.concat(res);
+        reservations = res;
       }
       iterator.addDays(1);
+    } else {
+      for (let i = 0; i < 31; i++) {
+        const res = this.getReservationsForDay(iterator, props);
+
+        if (res) {
+          reservations = reservations.concat(res);
+        }
+        iterator.addDays(1);
+      }
     }
+
     return {reservations, scrollPosition};
   }
 
-  changeMonth = (add) => {
-    /* if(!this.monthIsUpdated)return;
-    this.monthIsUpdated = false; */
-    const newMonth = this.selectedDay.clone();
-    newMonth.setDate(1);
-    newMonth.addMonths(add);
-    this.scrollOver = false;
-    this.isTouched = false;
-    this.props.onDayChange(newMonth.toDate());
+  onScroll = event => {
+    const yOffset = event.nativeEvent.contentOffset.y;
+    _.invoke(this.props, 'onScroll', yOffset);
+
+    let topRowOffset = 0;
+    let topRow;
+    for (topRow = 0; topRow < this.heights.length; topRow++) {
+      if (topRowOffset + this.heights[topRow] / 2 >= yOffset) {
+        break;
+      }
+      topRowOffset += this.heights[topRow];
+    }
+
+    const row = this.state.reservations[topRow];
+    if (!row) return;
+
+    const day = row.day;
+    const sameDate = dateutils.sameDate(day, this.selectedDay);
+    if (!sameDate && this.scrollOver) {
+      this.selectedDay = day.clone();
+      _.invoke(this.props, 'onDayChange', day.clone());
+    }
+  };
+
+  onListTouch() {
+    this.scrollOver = true;
+  }
+
+  onRowLayoutChange(ind, event) {
+    this.heights[ind] = event.nativeEvent.layout.height;
+  }
+
+  onMoveShouldSetResponderCapture = () => {
+    this.onListTouch();
+    return false;
+  };
+
+  renderRow = ({item, index}) => {
+    const reservationProps = extractComponentProps(Reservation, this.props);
+
+    return (
+      <View onLayout={this.onRowLayoutChange.bind(this, index)}>
+        <Reservation {...reservationProps} item={item}/>
+      </View>
+    );
   };
 
   render() {
-    const {
-      props: {reservations, renderEmptyData, style, theme, ...otherProps},
-    } = this;
-
-    if (!reservations) {
-      if (renderEmptyData) {
-        return renderEmptyData();
+    const {reservations, selectedDay, theme, style} = this.props;
+    if (!reservations || !reservations[selectedDay.toString('yyyy-MM-dd')]) {
+      if (_.isFunction(this.props.renderEmptyData)) {
+        return _.invoke(this.props, 'renderEmptyData');
       }
-      return (
-        <ActivityIndicator
-          style={{marginTop: 80}}
-          color={theme && theme.indicatorColor}
-        />
-      );
+
+      return <ActivityIndicator style={this.style.indicator} color={theme && theme.indicatorColor}/>;
     }
+
     return (
       <FlatList
-        {...otherProps}
-        ref={(c) => {
-          if (!this.list) {
-            this.list = c;
-            this.updateScrollPosition();
-          } else this.list = c;
-        }}
+        ref={c => (this.list = c)}
         style={style}
-        contentContainerStyle={this.styles.content}
-        renderItem={this.renderRow.bind(this)}
+        contentContainerStyle={this.style.content}
         data={this.state.reservations}
-        onScroll={this.onScroll.bind(this)}
+        renderItem={this.renderRow}
+        keyExtractor={(item, index) => String(index)}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={200}
-        onMoveShouldSetResponderCapture={() => {
-          this.onListTouch();
-          this.isTouched = true;
-          this.forcedScrolling = false;
-          return false;
-        }}
-        onScrollBeginDrag={() => {
-          this.isTouched = true;
-          this.forcedScrolling = false;
-          this.onListTouch();
-        }}
-        keyExtractor={(_, index) => String(index)}
-        onMomentumScrollEnd={() => {
-          if (!this.isTouched) return;
-          this.scrollOver = false;
-          this.isTouched = false;
-          this.forcedScrolling = false;
-          this.updateScrollPosition();
-        }}
-        onScrollEndDrag={({nativeEvent}) => {
-          if (!this.isTouched || nativeEvent.velocity.y !== 0) return;
-          this.scrollOver = false;
-          this.isTouched = false;
-          this.updateScrollPosition();
-          this.forcedScrolling = false;
-        }}
-        onLayout={({
-          nativeEvent: {
-            layout: {height},
-          },
-        }) => {
-          this.listHeight = height;
-        }}
+        onMoveShouldSetResponderCapture={this.onMoveShouldSetResponderCapture}
+        onScroll={this.onScroll}
+        refreshControl={this.props.refreshControl}
+        refreshing={this.props.refreshing}
+        onRefresh={this.props.onRefresh}
+        onScrollBeginDrag={this.props.onScrollBeginDrag}
+        onScrollEndDrag={this.props.onScrollEndDrag}
+        onMomentumScrollBegin={this.props.onMomentumScrollBegin}
+        onMomentumScrollEnd={this.props.onMomentumScrollEnd}
       />
     );
   }

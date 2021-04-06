@@ -8,12 +8,11 @@ export default function styleConstructor(theme = {}) {
   return  StyleSheet.create({
     container: {
       flexDirection: 'row',
-      // backgroundColor:'yellow',
       marginVertical:2,
       paddingVertical:8
-      // justifyContent:'flex-start',
-      // alignItems:'flex-start',
-      // alignContent:'flex-start'
+    },
+    innerContainer: {
+      flex: 1
     },
     dayNum: {
       fontSize: 28,
@@ -35,10 +34,12 @@ export default function styleConstructor(theme = {}) {
       alignItems: 'center',
       justifyContent: 'flex-start',
       // marginTop: 8,
-      // alignSelf:'flex-start'
     },
     today: {
       color: appStyle.agendaTodayColor
+    },
+    indicator: {
+      marginTop: 80
     },
     ...(theme[STYLESHEET_ID] || {})
   });
