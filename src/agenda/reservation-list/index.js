@@ -80,6 +80,11 @@ class ReservationList extends Component {
             () => this.updateReservations(this.props)
         );
       }
+
+      if(prevProps.reservations!== this.props?.reservations){
+        this.updateReservations(this.props)
+      }
+
       if (!dateutils.sameDate(prevProps.selectedDay, this.props.selectedDay)) {
         this.needToScroll = true;
       }
